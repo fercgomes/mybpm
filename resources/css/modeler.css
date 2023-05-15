@@ -1,0 +1,28 @@
+#modeler-container {
+    width: 100%;
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    height: calc(100vh - 150px);
+}
+
+#canvas-container {
+    flex: 1;
+    display: flex;
+}
+
+#bpmn-editor {
+    flex: 1;
+}
+
+#bpmn-editor,
+#properties-container {
+    overflow-y: auto;
+}
+
+#properties-container {
+    position: relative;
+    height: 100%;
+    width: 300px;
+    border-left: solid 1px #cccccc;
+}
