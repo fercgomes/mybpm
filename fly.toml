@@ -20,7 +20,7 @@ primary_region = "gru"
   APP_KEY = "base64:YxVZ4lllhcnrcne2ht7ZFhErvuZI502MXf0MiHV1C08="
   APP_DEBUG = "false"
   APP_URL = "https://mybpm.fly.dev"
-  DB_CONNECTION = "postgres"
+  DB_CONNECTION = "pgsql"
 
 [http_service]
   internal_port = 8080
