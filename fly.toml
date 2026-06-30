@@ -21,6 +21,12 @@ primary_region = "gru"
   APP_DEBUG = "false"
   APP_URL = "https://mybpm.fly.dev"
   DB_CONNECTION = "postgres"
+  # PostHog analytics. POSTHOG_PROJECT_TOKEN is a public project API key (safe to commit).
+  # POSTHOG_HOST must point at the PostHog instance this token belongs to:
+  # PostHog Cloud US (default below), EU ("https://eu.i.posthog.com"), or your self-hosted URL.
+  POSTHOG_PROJECT_TOKEN = "phc_BpaoLdwjRxcbpnDQPPuT9vNNcjkxJZmcJtWCEU5QcA2y"
+  POSTHOG_HOST = "https://us.i.posthog.com"
+  POSTHOG_DISABLED = "false"
 
 [http_service]
   internal_port = 8080
