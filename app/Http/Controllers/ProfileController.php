@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\PostHogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +25,7 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, PostHogService $posthog): RedirectResponse
     {
         $request->user()->fill($request->validated());
 
@@ -34,19 +35,27 @@ class ProfileController extends Controller
 
         $request->user()->save();
 
+        // PostHog: Track profile update and re-identify with new properties
+        $user = $request->user();
+        $posthog->identify($user->email, $user->getPostHogProperties());
+        $posthog->capture($user->email, 'profile_updated');
+
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, PostHogService $posthog): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+
+        // PostHog: Track account deletion
+        $posthog->capture($user->email, 'account_deleted');
 
         Auth::logout();
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BModel;
 use App\Http\Requests\StoreBModelRequest;
 use App\Http\Requests\UpdateBModelRequest;
+use App\Services\PostHogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
@@ -19,11 +20,17 @@ class BModelController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request, PostHogService $posthog)
     {
         $this->authorize('viewAny', BModel::class);
         $userId = $request->user()->id;
         $models = BModel::where('owner_id', $request->user()->id)->get();
+
+        // PostHog: Track model list view
+        $user = $request->user();
+        $posthog->capture($user->email, 'bpm_model_list_viewed', [
+            'model_count' => $models->count(),
+        ]);
 
         return view('models.index', ["models" => $models]);
     }
@@ -39,7 +46,7 @@ class BModelController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBModelRequest $request)
+    public function store(StoreBModelRequest $request, PostHogService $posthog)
     {
         $validated = $request->safe();
 
@@ -61,6 +68,13 @@ class BModelController extends Controller
         $model->content = $emptyXml;
         $model->save();
 
+        // PostHog: Track model creation
+        $user = $request->user();
+        $posthog->capture($user->email, 'bpm_model_created', [
+            'model_id' => $model->id,
+            'model_name' => $model->name,
+        ]);
+
         return Redirect::route('models.edit', ['id' => $model->id]);
     }
 
@@ -75,10 +89,18 @@ class BModelController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Request $request, string $id)
+    public function edit(Request $request, string $id, PostHogService $posthog)
     {
         $model = BModel::find($id);
         $this->authorize('update', $model);
+
+        // PostHog: Track editor open
+        $user = $request->user();
+        $posthog->capture($user->email, 'bpm_model_editor_opened', [
+            'model_id' => $model->id,
+            'model_name' => $model->name,
+        ]);
+
         return view('models.edit', ["model" => $model]);
     }
 
@@ -93,9 +115,18 @@ class BModelController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request, PostHogService $posthog)
     {
-        BModel::find($id)->delete();
+        $model = BModel::find($id);
+
+        // PostHog: Track model deletion
+        $user = $request->user();
+        $posthog->capture($user->email, 'bpm_model_deleted', [
+            'model_id' => $model->id,
+            'model_name' => $model->name,
+        ]);
+
+        $model->delete();
 
         return Redirect::route('models.index');
     }
