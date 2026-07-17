@@ -47,4 +47,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(BModel::class);
     }
+
+    public function getPostHogProperties(): array
+    {
+        return [
+            'email' => $this->email,
+            'name' => $this->name,
+            'date_joined' => $this->created_at?->toISOString(),
+        ];
+    }
 }

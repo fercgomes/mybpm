@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use PostHog\PostHog;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -24,7 +25,13 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            if (config('posthog.api_key') && !config('posthog.disabled')) {
+                $distinctId = auth()->user()?->email ?? 'anonymous';
+                PostHog::captureException($e, $distinctId, [
+                    '$current_url' => request()->fullUrl(),
+                    '$request_method' => request()->method(),
+                ]);
+            }
         });
     }
 }
