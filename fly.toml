@@ -21,6 +21,9 @@ primary_region = "gru"
   APP_DEBUG = "false"
   APP_URL = "https://mybpm.fly.dev"
   DB_CONNECTION = "postgres"
+  POSTHOG_PROJECT_TOKEN = "phc_soqpe6qVJayqAfNG2dA7VLCdXG5i5A2DpiLc7ykbFnKb"
+  POSTHOG_HOST = "https://us.i.posthog.com"
+  POSTHOG_DISABLED = "false"
 
 [http_service]
   internal_port = 8080
