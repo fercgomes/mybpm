@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
+use App\Services\PostHogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,11 +24,21 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, PostHogService $posthog): RedirectResponse
     {
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        // PostHog: Identify and track login
+        $user = $request->user();
+        $posthog->identify($user->email, [
+            'name' => $user->name,
+            'date_joined' => $user->created_at->toISOString(),
+        ]);
+        $posthog->capture($user->email, 'user_logged_in', [
+            'login_method' => 'password',
+        ]);
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
@@ -35,8 +46,15 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, PostHogService $posthog): RedirectResponse
     {
+        $user = $request->user();
+
+        // PostHog: Track logout before session is invalidated
+        if ($user) {
+            $posthog->capture($user->email, 'user_logged_out');
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
