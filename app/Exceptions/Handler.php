@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Services\PostHogService;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -23,8 +24,17 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
-        $this->reportable(function (Throwable $e) {
-            //
+        $this->reportable(function (Throwable $e): void {
+            $distinctId = auth()->id();
+
+            app(PostHogService::class)->captureException(
+                $e,
+                $distinctId !== null ? (string) $distinctId : null,
+                [
+                    '$current_url' => request()->fullUrl(),
+                    '$request_method' => request()->method(),
+                ]
+            );
         });
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\PostHogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,15 +25,24 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(ProfileUpdateRequest $request, PostHogService $posthog): RedirectResponse
     {
         $request->user()->fill($request->validated());
+        $emailChanged = $request->user()->isDirty('email');
 
-        if ($request->user()->isDirty('email')) {
+        if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->save();
+
+        $posthog->identify((string) $request->user()->getAuthIdentifier(), [
+            'email' => $request->user()->email,
+            'name' => $request->user()->name,
+        ]);
+        $posthog->capture('profile_updated', [
+            'email_changed' => $emailChanged,
+        ]);
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -40,13 +50,15 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, PostHogService $posthog): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+
+        $posthog->capture('account_deleted');
 
         Auth::logout();
 
